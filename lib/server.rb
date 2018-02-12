@@ -6,7 +6,7 @@ counter = 0
 
 while true
   client = tcp_server.accept
-
+  request_lines = []
   while line = client.gets and !line.chomp.empty?
     output = "Hello, World! (#{counter})"
     headers = ['http/1.1 200 ok',
@@ -16,7 +16,8 @@ while true
                "content-length: #{output.length}\r\n\r\n"].join("\r\n")
     client.puts headers
     client.puts output
+    request_lines << line.chomp
+    client.puts "<pre>#{request_lines}</pre>"
   end
-
   counter += 1
 end
