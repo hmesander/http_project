@@ -9,5 +9,10 @@ class ServerTest < Minitest::Test
 
     response = Faraday.get 'http://localhost:9292'
     assert_equal 'Hello, World! (1)', response.body
+
+    response = Faraday.get 'http://localhost:9292'
+    assert_equal 'Hello, World! (2)', response.body
   end
+
+  def 
 end
