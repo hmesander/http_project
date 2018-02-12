@@ -1,23 +1,33 @@
 require 'faraday'
 require 'minitest/autorun'
 require 'minitest/pride'
+require './lib/server'
 
 class ServerTest < Minitest::Test
-  def 
+  def test_that_server_exists
+    skip
+    server = Server.new
+
+    assert_instance_of Server, server
+  end
+
   def test_that_server_responds_on_9292_host
     skip
     response = Faraday.get 'http://localhost:9292'
-    assert_equal 'Hello, World! (0)', response.body
+    assert_equal "Hello, World! (0)\n\n</pre>", response.body
 
     response = Faraday.get 'http://localhost:9292'
-    assert_equal 'Hello, World! (1)', response.body
+    assert_equal "Hello, World! (1)\n\n</pre>", response.body
 
     response = Faraday.get 'http://localhost:9292'
-    assert_equal 'Hello, World! (2)', response.body
+    assert_equal "Hello, World! (2)\n\n</pre>", response.body
   end
 
   def test_that_server_can_respond_with_request_details
-    expected = "<pre>Hello, World! (0)\n\nVerb: GET\nPath: /\nProtocol: HTTP/1.1\nHost: localhost\nPort: 9292\nOrigin: 127.0.0.1\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8</pre>"
+    formatted_request = "Verb: GET\nPath: /\nProtocol: HTTP/1.1\nHost: localhost\n
+                         Port: 9292\nOrigin: 0501bb48-d1e5-2538-765f-5fd213c384af\n
+                         Accept: */*"
+    expected = "<pre>Hello, World! (0)\n\n#{formatted_request}\n\n</pre>"
     response = Faraday.get 'http://localhost:9292'
 
     assert_equal expected, response.body

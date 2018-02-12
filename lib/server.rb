@@ -2,10 +2,16 @@ require 'socket'
 require 'pry'
 
 class Server
-  def initialize(port = 9292)
-    @port          = port
-    @tcp_server    = TCPServer.new(port)
+  def initialize
+    @tcp_server    = TCPServer.new(9292)
     @hello_counter = 0
+    @verb          = nil
+    @path          = nil
+    @protocol      = nil
+    @host          = nil
+    @port          = nil
+    @origin        = nil
+    @accept        = nil
   end
 
   def process
@@ -22,16 +28,40 @@ class Server
     while line = @client.gets and !line.chomp.empty?
       @request_lines << line.chomp
     end
+    parse
+  end
+
+  def parse
+    split_request = @request_lines.map do |string|
+      string.split(' ')
+    end
+    @verb = split_request[0][0]
+    @path = split_request[0][1]
+    @protocol = split_request[0][2]
+    @host = split_request[1][1].chop.chop.chop.chop.chop
+    @port = split_request[1][1][-4..-1]
+    @origin = split_request[5][1]
+    @accept = split_request[6][1]
+  end
+
+  def formatted_request
+    "Verb: #{@verb}\n
+     Path: #{@path}\n
+     Protocol: #{@protocol}\n
+     Host: #{@host}\n
+     Port: #{@port}\n
+     Origin: #{@origin}\n
+     Accept: #{@accept}"
   end
 
   def output
-    formatted_request = "Verb: #{@request_lines[0][0..2]}\nPath: #{@request_lines[0][4]}\nProtocol: #{@request_lines[0][-8..-1]}\nHost: #{@request_lines[1][-14..-6]}\nPort: #{@request_lines[1][-4..-1]}\nOrigin: 127.0.0.1\n#{@request_lines[6]}"
-    output = "<pre>Hello, World! (#{@hello_counter})\n\n" + formatted_request + '</pre>'
+    output = "<pre>Hello, World! (#{@hello_counter})\n\n#{formatted_request}\n\n</pre>"
     headers = ['http/1.1 200 ok',
                "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
                'server: ruby',
                'content-type: text/html; charset=iso-8859-1',
                "content-length: #{output.length}\r\n\r\n"].join("\r\n")
-    @client.puts headers + output
+    @client.puts headers
+    @client.puts output
   end
 end
