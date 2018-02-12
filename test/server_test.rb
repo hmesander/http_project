@@ -16,7 +16,9 @@ class ServerTest < Minitest::Test
   end
 
   def test_that_server_can_respond_with_request_details
+    expected = "<pre>Verb: POST\nPath: /\nProtocol: HTTP/1.1\nHost: 127.0.0.1\nPort: 9292\nOrigin: 127.0.0.1\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8</pre>"
     response = Faraday.get 'http://localhost:9292'
-    assert_equal response.request, response.body
+
+    assert_equal expected, response.body
   end
 end
