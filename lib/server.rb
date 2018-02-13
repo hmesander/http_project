@@ -1,25 +1,39 @@
 require 'socket'
 require 'pry'
+require 'Date'
+require 'time'
 
 class Server
   def initialize
-    @tcp_server    = TCPServer.new(9292)
-    @hello_counter = 0
-    @verb          = nil
-    @path          = nil
-    @protocol      = nil
-    @host          = nil
-    @port          = nil
-    @origin        = nil
-    @accept        = nil
+    @tcp_server     = TCPServer.new(9292)
+    @hello_counter  = 0
+    @total_requests = 0
+    @verb           = nil
+    @path           = nil
+    @protocol       = nil
+    @host           = nil
+    @port           = nil
+    @origin         = nil
+    @accept         = nil
   end
 
   def process
     while true
       @client = @tcp_server.accept
       request
-      output
-      @hello_counter += 1
+      @client.puts headers
+      if @path[0..13] == '/word_search?' && @verb == 'GET'
+        word_search
+      elsif @path == '/'
+        @client.puts output_diagnostic
+      elsif @path == '/hello'
+        @client.puts output_hello
+      elsif @path == '/datetime'
+        @client.puts output_date
+      elsif @path == '/shutdown'
+        @client.puts output_shutdown
+      end
+      @total_requests += 1
     end
   end
 
@@ -54,14 +68,47 @@ class Server
      Accept: #{@accept}"
   end
 
-  def output
-    output = "<pre>Hello, World! (#{@hello_counter})\n\n#{formatted_request}\n\n</pre>"
-    headers = ['http/1.1 200 ok',
-               "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
-               'server: ruby',
-               'content-type: text/html; charset=iso-8859-1',
-               "content-length: #{output.length}\r\n\r\n"].join("\r\n")
-    @client.puts headers
-    @client.puts output
+  def output_diagnostic
+    "<pre>#{formatted_request}\n\n</pre>"
   end
+
+  def output_hello
+    "<pre>Hello, World! (#{@hello_counter}</pre>"
+    @hello_counter += 1
+  end
+
+  def output_date
+    "<pre>#{Time.now.strftime('%l:%M')} on #{Date.today.strftime('%A, %B %e, %Y')}</pre>"
+  end
+
+  def output_shutdown
+    shutdown = "Total Requests: #{@total_requests}"
+    @client.close
+    shutdown
+  end
+
+  def headers
+    ['http/1.1 200 ok',
+     "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
+     'server: ruby',
+     'content-type: text/html; charset=iso-8859-1',
+     "content-length: #{output.length}\r\n\r\n"].join("\r\n")
+  end
+
+  def word_search
+    path_array = @path.split('?')
+    parameter_array = path_array[1].split('=')
+    @word = parameter_array[1]
+    search_dictionary
+  end
+
+  def search_dictionary
+    found = File.read('./dictionary.txt').include?(@word)
+    if found == true
+      @client.puts "#{@word.upcase} is a known word."
+    else
+      @client.puts "#{@word.upcase} is not a known word."
+    end
+  end
+
 end

@@ -1,3 +1,4 @@
+require 'socket'
 class Client
 
   def initialize
@@ -6,7 +7,7 @@ class Client
 
   def process
     while true
-      @tcp_server.gets
+      @tcp_server.accept
       request
     end
   end
@@ -25,3 +26,6 @@ class Client
      Accept-Language: en-US,en;q=0.9'
   end
 end
+
+client = Client.new
+client.process
