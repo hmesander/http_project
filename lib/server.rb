@@ -15,6 +15,8 @@ class Server
     @port           = nil
     @origin         = nil
     @accept         = nil
+    @guesses        = []
+    @answer         = nil
   end
 
   def process
@@ -22,10 +24,14 @@ class Server
     until closed
       @client = @tcp_server.accept
       request
-      if @path[0..12] == '/word_search'
+      if @path[0..11] == '/word_search?' && @verb == 'GET'
         word_search
-      elsif @path == '/start_game'
-        @client.puts begin_game
+      elsif @path == '/start_game' && @verb == 'POST'
+        begin_game
+      elsif @path == '/game' && @verb == 'GET'
+        game_stats
+      elsif @path == '/game' && @verb == 'POST'
+        guess
       elsif @path == '/'
         @client.puts output_diagnostic
       elsif @path == '/hello'
@@ -80,8 +86,16 @@ class Server
     output
   end
 
+  def date_now
+    Date.today.strftime('%A, %B %e, %Y')
+  end
+
+  def time_now
+    Time.now.strftime('%l:%M%p')
+  end
+
   def output_date
-    output = "<pre>#{Time.now.strftime('%l:%M%p')} on #{Date.today.strftime('%A, %B %e, %Y')}</pre>"
+    output = "<pre>#{time_now} on #{date_now}</pre>"
     @output_length = output.length
     @client.puts headers
     output
@@ -111,28 +125,51 @@ class Server
 
   def search_dictionary
     dictionary = File.readlines('/usr/share/dict/words')
-    found = dictionary.any? do |line|
-      line.include?(@word)
-    end
+    found = dictionary.include?(@word)
+    File.close('/usr/share/dict/words')
     if found
       output = "#{@word.upcase} is a known word."
-      @output_length = output.length
-      @client.puts headers
-      @client.puts output
     else
       output = "#{@word.upcase} is not a known word."
-      @output_length = output.length
-      @client.puts headers
-      @client.puts output
     end
+    @output_length = output.length
+    @client.puts headers
+    @client.puts output
   end
 
   def begin_game
-    'Good luck!'
+    output = 'Good luck!'
+    @output_length = output.length
+    @client.puts headers
+    @client.puts output
+    game
   end
 
   def guessing_game
-    answer = rand(0..100)
+    rand(0..100)
   end
 
+  def game_stats
+    output1 = "You have taken #{@guesses.count} guesses.\n"
+    output2 = "Guesses taken so far: #{guess_stats}."
+    @output_length = (output1 + output2).length
+    @client.puts headers
+    @client.puts output1 + output2
+  end
+
+  def guess_stats
+    @guesses.map do |guess|
+      if guess > @answer
+        "#{guess} - too high!"
+      elsif guess < @answer
+        "#{guess} - too low!"
+      elsif guess == @answer
+        "#{guess} - correct!"
+      end
+    end
+  end
+
+  def guess
+    @guesses << guess
+  end
 end
