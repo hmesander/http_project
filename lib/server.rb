@@ -24,7 +24,7 @@ class Server
     until closed
       @client = @tcp_server.accept
       request
-      if @path[0..11] == '/word_search?' && @verb == 'GET'
+      if @path[0..12] == '/word_search?' && @verb == 'GET'
         word_search
       elsif @path == '/start_game' && @verb == 'POST'
         begin_game
@@ -125,8 +125,7 @@ class Server
 
   def search_dictionary
     dictionary = File.readlines('/usr/share/dict/words')
-    found = dictionary.include?(@word)
-    File.close('/usr/share/dict/words')
+    found = dictionary.include?("#{@word}\n")
     if found
       output = "#{@word.upcase} is a known word."
     else
@@ -138,15 +137,11 @@ class Server
   end
 
   def begin_game
+    @answer = rand(0..100)
     output = 'Good luck!'
     @output_length = output.length
     @client.puts headers
     @client.puts output
-    game
-  end
-
-  def guessing_game
-    rand(0..100)
   end
 
   def game_stats
