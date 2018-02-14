@@ -18,20 +18,24 @@ class Server
   end
 
   def process
-    while true
+    closed = false
+    until closed
       @client = @tcp_server.accept
       request
-      @client.puts headers
-      if @path[0..13] == '/word_search?' && @verb == 'GET'
+      if @path[0..12] == '/word_search'
         word_search
+      elsif @path == '/start_game'
+        @client.puts begin_game
       elsif @path == '/'
         @client.puts output_diagnostic
       elsif @path == '/hello'
         @client.puts output_hello
+        @hello_counter += 1
       elsif @path == '/datetime'
         @client.puts output_date
       elsif @path == '/shutdown'
         @client.puts output_shutdown
+        closed = true
       end
       @total_requests += 1
     end
@@ -59,31 +63,34 @@ class Server
   end
 
   def formatted_request
-    "Verb: #{@verb}\n
-     Path: #{@path}\n
-     Protocol: #{@protocol}\n
-     Host: #{@host}\n
-     Port: #{@port}\n
-     Origin: #{@origin}\n
-     Accept: #{@accept}"
+    "Verb: #{@verb}\nPath: #{@path}\nProtocol: #{@protocol}\nHost: #{@host}\nPort: #{@port}\nOrigin: #{@origin}\nAccept: #{@accept}"
   end
 
   def output_diagnostic
-    "<pre>#{formatted_request}\n\n</pre>"
+    output = "<pre>#{formatted_request}\n\n</pre>"
+    @output_length = output.length
+    @client.puts headers
+    output
   end
 
   def output_hello
-    "<pre>Hello, World! (#{@hello_counter}</pre>"
-    @hello_counter += 1
+    output = "<pre>Hello, World! (#{@hello_counter})</pre>"
+    @output_length = output.length
+    @client.puts headers
+    output
   end
 
   def output_date
-    "<pre>#{Time.now.strftime('%l:%M')} on #{Date.today.strftime('%A, %B %e, %Y')}</pre>"
+    output = "<pre>#{Time.now.strftime('%l:%M%p')} on #{Date.today.strftime('%A, %B %e, %Y')}</pre>"
+    @output_length = output.length
+    @client.puts headers
+    output
   end
 
   def output_shutdown
     shutdown = "Total Requests: #{@total_requests}"
-    @client.close
+    @output_length = shutdown.length
+    @client.puts headers
     shutdown
   end
 
@@ -92,7 +99,7 @@ class Server
      "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
      'server: ruby',
      'content-type: text/html; charset=iso-8859-1',
-     "content-length: #{output.length}\r\n\r\n"].join("\r\n")
+     "content-length: #{@output_length}\r\n\r\n"].join("\r\n")
   end
 
   def word_search
@@ -103,12 +110,29 @@ class Server
   end
 
   def search_dictionary
-    found = File.read('./dictionary.txt').include?(@word)
-    if found == true
-      @client.puts "#{@word.upcase} is a known word."
-    else
-      @client.puts "#{@word.upcase} is not a known word."
+    dictionary = File.readlines('/usr/share/dict/words')
+    found = dictionary.any? do |line|
+      line.include?(@word)
     end
+    if found
+      output = "#{@word.upcase} is a known word."
+      @output_length = output.length
+      @client.puts headers
+      @client.puts output
+    else
+      output = "#{@word.upcase} is not a known word."
+      @output_length = output.length
+      @client.puts headers
+      @client.puts output
+    end
+  end
+
+  def begin_game
+    'Good luck!'
+  end
+
+  def guessing_game
+    answer = rand(0..100)
   end
 
 end
