@@ -31,7 +31,8 @@ class Server
       elsif @path == '/game' && @verb == 'GET'
         game_stats
       elsif @path == '/game' && @verb == 'POST'
-        guess
+        parse_post_request
+        game_stats
       elsif @path == '/'
         @client.puts output_diagnostic
       elsif @path == '/hello'
@@ -66,6 +67,29 @@ class Server
     @port = split_request[1][1][-4..-1]
     @origin = split_request[5][1]
     @accept = split_request[6][1]
+  end
+
+  def parse_post_request
+    @request_lines = []
+    while line = @client.gets and !line.chomp.empty?
+      @request_lines << line.chomp
+    end
+    find_content_length
+  end
+
+  def find_content_length
+    @request_lines[0] = 'foo: bar'
+    split_request = @request_lines.map do |string|
+      string.split(': ')
+    end
+    hash_request = split_request.to_h
+    @content_length = hash_request['Content-Length'].to_i
+    store_guess
+  end
+
+  def store_guess
+    guess = @client.read(@content_length)
+    @guesses << guess.to_i
   end
 
   def formatted_request
@@ -124,7 +148,7 @@ class Server
   end
 
   def search_dictionary
-    dictionary = File.readlines('/usr/share/dict/words')
+    dictionary = File.read('/usr/share/dict/words')
     found = dictionary.include?("#{@word}\n")
     if found
       output = "#{@word.upcase} is a known word."
@@ -149,7 +173,7 @@ class Server
     output2 = "Guesses taken so far: #{guess_stats}."
     @output_length = (output1 + output2).length
     @client.puts headers
-    @client.puts output1 + output2
+    @client.puts "#{output1} + #{output2}"
   end
 
   def guess_stats

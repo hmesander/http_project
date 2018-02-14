@@ -1,8 +1,8 @@
 require 'faraday'
 require 'minitest/autorun'
 require 'minitest/pride'
-require './lib/server'
-require './lib/client'
+# require './lib/server'
+# require './lib/client'
 
 class ServerTest < Minitest::Test
   def test_that_server_exists
@@ -36,10 +36,17 @@ class ServerTest < Minitest::Test
   end
 
   def test_that_server_can_respond_to_given_path
+    skip
     response = Faraday.get 'http://localhost:9292'
     formatted_request = 'Verb: GET\nPath: /\nProtocol: HTTP/1.1\nHost: localhost\n
                          Port: 9292\nOrigin: 0501bb48-d1e5-2538-765f-5fd213c384af\n
                          Accept: */*'
     assert_equal formatted_request, response.body
+  end
+
+  def test_for_post_request
+    post = Faraday.post 'http://localhost:9292/game'
+
+    assert_equal 45, post
   end
 end
