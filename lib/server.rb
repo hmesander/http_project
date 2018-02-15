@@ -32,7 +32,6 @@ class Server
         game_stats
       elsif @path == '/game' && @verb == 'POST'
         parse_post_request
-        game_stats
       elsif @path == '/'
         @client.puts output_diagnostic
       elsif @path == '/hello'
@@ -88,8 +87,10 @@ class Server
   end
 
   def store_guess
-    guess = @client.read(@content_length)
-    @guesses << guess.to_i
+    body = @client.read(@content_length).to_s
+    guess = body.split('=')[1].to_i
+    @guesses << guess
+    guess_stats
   end
 
   def formatted_request
@@ -156,7 +157,7 @@ class Server
       output = "#{@word.upcase} is not a known word."
     end
     @output_length = output.length
-    @client.puts headers
+    @client.puts redirect_headers + headers
     @client.puts output
   end
 
@@ -177,7 +178,7 @@ class Server
   end
 
   def guess_stats
-    @guesses.map do |guess|
+    output = @guesses.map do |guess|
       if guess > @answer
         "#{guess} - too high!"
       elsif guess < @answer
@@ -186,9 +187,14 @@ class Server
         "#{guess} - correct!"
       end
     end
+    @output_length = output.length
+    @client.puts headers
+    @client.puts output
   end
 
-  def guess
-    @guesses << guess
+  def redirect_headers
+    '$ curl -I localhost:9292
+    HTTP/1.0 302 Found
+    Location: http://localhost:9292/game'
   end
 end
