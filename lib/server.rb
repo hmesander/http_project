@@ -1,41 +1,32 @@
 require 'socket'
-require 'pry'
 require 'Date'
 require 'time'
-# require './lib/word_search.rb'
+require './lib/game'
 
 class Server
-  # include WordSearch
+  include Game
   def initialize
     @tcp_server     = TCPServer.new(9292)
     @hello_counter  = 0
     @total_requests = 0
-    @verb           = nil
-    @path           = nil
-    @protocol       = nil
-    @host           = nil
-    @port           = nil
-    @origin         = nil
-    @accept         = nil
-    @guesses        = []
-    @answer         = nil
     @closed         = false
+    @guesses        = []
   end
 
   def initial_request_handler
     until @closed
       @client = @tcp_server.accept
-      request_parser
+      request_line_reader
       if @verb == 'GET'
-        get_handler
+        get_request_handler
       elsif @verb == 'POST'
-        post_handler
+        post_request_handler
       end
       @total_requests += 1
     end
   end
 
-  def get_handler
+  def get_request_handler
     if @path == '/'
       output_diagnostic
     elsif @path == '/hello'
@@ -47,31 +38,30 @@ class Server
       output_shutdown
     elsif @path[0..12] == '/word_search?'
       word_search
-    elsif @path == '/start_game'
-      begin_game
     elsif @path == '/game'
       game_stats
     end
   end
 
-  def post_handler
+  def post_request_handler
     if @path == '/start_game'
       begin_game
     elsif @path == '/game'
-      parse_post_request
+      parse_post_body
     end
   end
 
-  def request_parser
-    @request_lines = []
+  def request_line_reader
+    request_lines = []
     while line = @client.gets and !line.chomp.empty?
-      @request_lines << line.chomp
+      request_lines << line.chomp
     end
-    parse
+    parse_headers(request_lines)
+    parse_post_body(request_lines) if @verb == 'POST'
   end
 
-  def parse
-    split_request = @request_lines.map do |string|
+  def parse_headers(request_lines)
+    split_request = request_lines.map do |string|
       string.split(' ')
     end
     @verb = split_request[0][0]
@@ -83,29 +73,14 @@ class Server
     @accept = split_request[6][1]
   end
 
-  def parse_post_request
-    @request_lines = []
-    while line = @client.gets and !line.chomp.empty?
-      @request_lines << line.chomp
-    end
-    find_content_length
-  end
-
-  def find_content_length
-    @request_lines[0] = 'foo: bar'
-    split_request = @request_lines.map do |string|
+  def parse_post_body(request_lines)
+    request_lines.shift
+    split_request = request_lines.map do |string|
       string.split(': ')
     end
     hash_request = split_request.to_h
     @content_length = hash_request['Content-Length'].to_i
     store_guess
-  end
-
-  def store_guess
-    body = @client.read(@content_length).to_s
-    guess = body.split('=')[1].to_i
-    @guesses << guess
-    guess_stats
   end
 
   def formatted_request
@@ -157,41 +132,8 @@ class Server
      "content-length: #{@output_length}\r\n\r\n"].join("\r\n")
   end
 
-  def begin_game
-    @answer = rand(0..100)
-    output = 'Good luck!'
-    @output_length = output.length
-    @client.puts headers
-    @client.puts output
-  end
-
-  def game_stats
-    output1 = "You have taken #{@guesses.count} guesses.\n"
-    output2 = "Guesses taken so far:\n#{guess_stats.join("\n")}"
-    @output_length = (output1 + output2).length
-    @client.puts headers
-    @client.puts output1 + output2
-  end
-
-  def guess_stats
-    output = @guesses.map do |guess|
-      if guess > @answer
-        "#{guess} - too high!"
-      elsif guess < @answer
-        "#{guess} - too low!"
-      elsif guess == @answer
-        "#{guess} - correct!"
-      end
-    end
-    @output_length = output.length
-    @client.puts headers
-    @client.puts output
-  end
-
   def word_search
-    path_array = @path.split('?')
-    parameter_array = path_array[1].split('=')
-    @word = parameter_array[1]
+    @word = @path.split('?')[1].split('=')[1]
     search_dictionary
   end
 

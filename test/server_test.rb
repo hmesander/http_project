@@ -1,10 +1,16 @@
+require 'simplecov'
+SimpleCov.start
 require 'faraday'
 require 'minitest/autorun'
 require 'minitest/pride'
-# require './lib/server'
-# require './lib/client'
+require './lib/server'
 
 class ServerTest < Minitest::Test
+
+  def setup
+    @conn = Faraday.new(:url => 'localhost:9292')
+  end
+
   def test_that_server_exists
     skip
     server = Server.new
@@ -12,15 +18,14 @@ class ServerTest < Minitest::Test
     assert_instance_of Server, server
   end
 
-  def test_that_server_responds_on_9292_host
-    skip
-    response = Faraday.get 'http://localhost:9292'
+  def test_that_server_responds_with_hello_world
+    response = @conn.get '/hello'
     assert_equal "Hello, World! (0)\n\n</pre>", response.body
 
-    response = Faraday.get 'http://localhost:9292'
+    response = @conn.get '/hello'
     assert_equal "Hello, World! (1)\n\n</pre>", response.body
 
-    response = Faraday.get 'http://localhost:9292'
+    response = @conn.get '/hello'
     assert_equal "Hello, World! (2)\n\n</pre>", response.body
   end
 
@@ -45,6 +50,7 @@ class ServerTest < Minitest::Test
   end
 
   def test_for_post_request
+    skip
     post = Faraday.post 'http://localhost:9292/game'
 
     assert_equal 45, post
