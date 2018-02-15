@@ -170,10 +170,10 @@ class Server
 
   def game_stats
     output1 = "You have taken #{@guesses.count} guesses.\n"
-    output2 = "Guesses taken so far: #{guess_stats}."
+    output2 = "Guesses taken so far:\n#{guess_stats.join("\n")}"
     @output_length = (output1 + output2).length
     @client.puts headers
-    @client.puts "#{output1} + #{output2}"
+    @client.puts output1 + output2
   end
 
   def guess_stats
