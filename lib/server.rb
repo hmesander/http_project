@@ -17,37 +17,50 @@ class Server
     @accept         = nil
     @guesses        = []
     @answer         = nil
+    @closed         = false
   end
 
-  def process
-    closed = false
-    until closed
+  def initial_request_handler
+    until @closed
       @client = @tcp_server.accept
-      request
-      if @path[0..12] == '/word_search?' && @verb == 'GET'
-        word_search
-      elsif @path == '/start_game' && @verb == 'POST'
-        begin_game
-      elsif @path == '/game' && @verb == 'GET'
-        game_stats
-      elsif @path == '/game' && @verb == 'POST'
-        parse_post_request
-      elsif @path == '/'
-        @client.puts output_diagnostic
-      elsif @path == '/hello'
-        @client.puts output_hello
-        @hello_counter += 1
-      elsif @path == '/datetime'
-        @client.puts output_date
-      elsif @path == '/shutdown'
-        @client.puts output_shutdown
-        closed = true
+      request_parser
+      if @verb == 'GET'
+        get_handler
+      elsif @verb == 'POST'
+        post_handler
       end
       @total_requests += 1
     end
   end
 
-  def request
+  def get_handler
+    if @path == '/'
+      output_diagnostic
+    elsif @path == '/hello'
+      output_hello
+      @hello_counter += 1
+    elsif @path == '/datetime'
+      output_date
+    elsif @path == '/shutdown'
+      output_shutdown
+    elsif @path[0..12] == '/word_search?'
+      word_search
+    elsif @path == '/start_game'
+      begin_game
+    elsif @path == '/game'
+      game_stats
+    end
+  end
+
+  def post_handler
+    if @path == '/start_game'
+      begin_game
+    elsif @path == '/game'
+      parse_post_request
+    end
+  end
+
+  def request_parser
     @request_lines = []
     while line = @client.gets and !line.chomp.empty?
       @request_lines << line.chomp
@@ -101,14 +114,14 @@ class Server
     output = "<pre>#{formatted_request}\n\n</pre>"
     @output_length = output.length
     @client.puts headers
-    output
+    @client.puts output
   end
 
   def output_hello
     output = "<pre>Hello, World! (#{@hello_counter})</pre>"
     @output_length = output.length
     @client.puts headers
-    output
+    @client.puts output
   end
 
   def date_now
@@ -123,14 +136,15 @@ class Server
     output = "<pre>#{time_now} on #{date_now}</pre>"
     @output_length = output.length
     @client.puts headers
-    output
+    @client.puts output
   end
 
   def output_shutdown
     shutdown = "Total Requests: #{@total_requests}"
     @output_length = shutdown.length
     @client.puts headers
-    shutdown
+    @client.puts shutdown
+    @closed = true
   end
 
   def headers
