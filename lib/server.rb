@@ -2,8 +2,10 @@ require 'socket'
 require 'pry'
 require 'Date'
 require 'time'
+# require './lib/word_search.rb'
 
 class Server
+  # include WordSearch
   def initialize
     @tcp_server     = TCPServer.new(9292)
     @hello_counter  = 0
@@ -155,26 +157,6 @@ class Server
      "content-length: #{@output_length}\r\n\r\n"].join("\r\n")
   end
 
-  def word_search
-    path_array = @path.split('?')
-    parameter_array = path_array[1].split('=')
-    @word = parameter_array[1]
-    search_dictionary
-  end
-
-  def search_dictionary
-    dictionary = File.read('/usr/share/dict/words')
-    found = dictionary.include?("#{@word}\n")
-    if found
-      output = "#{@word.upcase} is a known word."
-    else
-      output = "#{@word.upcase} is not a known word."
-    end
-    @output_length = output.length
-    @client.puts redirect_headers + headers
-    @client.puts output
-  end
-
   def begin_game
     @answer = rand(0..100)
     output = 'Good luck!'
@@ -200,6 +182,25 @@ class Server
       elsif guess == @answer
         "#{guess} - correct!"
       end
+    end
+    @output_length = output.length
+    @client.puts headers
+    @client.puts output
+  end
+
+  def word_search
+    path_array = @path.split('?')
+    parameter_array = path_array[1].split('=')
+    @word = parameter_array[1]
+    search_dictionary
+  end
+
+  def search_dictionary
+    dictionary = File.read('/usr/share/dict/words')
+    if dictionary.include?("#{@word}\n")
+      output = "#{@word.upcase} is a known word."
+    else
+      output = "#{@word.upcase} is not a known word."
     end
     @output_length = output.length
     @client.puts headers
