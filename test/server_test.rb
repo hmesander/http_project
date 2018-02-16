@@ -34,10 +34,45 @@ class ServerTest < Minitest::Test
     assert_equal expected, response.body
   end
 
-  def test_that_server_can_respond_with_
-    skip
-    post = Faraday.post 'http://localhost:9292/game'
+  def test_that_server_can_respond_with_0_requests_and_shutdown
+    skip # because this test will shutdown the server
+    expected = 'Total Requests: 0'
+    response = Faraday.get 'http://localhost:9292/shutdown'
 
-    assert_equal 45, post
+    assert_equal expected, response.body
+  end
+
+  def test_that_server_can_respond_with_total_requests
+    skip # because this test will shutdown the server
+    Faraday.get 'http://localhost:9292/hello'
+    Faraday.get 'http://localhost:9292/hello'
+
+    expected = 'Total Requests: 2'
+    response = Faraday.get 'http://localhost:9292/shutdown'
+
+    assert_equal expected, response.body
+  end
+
+  def test_that_server_can_search_for_words_in_dictionary
+    expected = 'RUNNER is a known word.'
+    response = Faraday.get 'http://localhost:9292/word_search?word=runner'
+
+    assert_equal expected, response.body
+
+    expected = 'SUPERCALI is not a known word.'
+    response = Faraday.get 'http://localhost:9292/word_search?word=supercali'
+
+    assert_equal expected, response.body
+  end
+
+  def test_that_server_can_start_a_new_game
+    expected = 'Good luck!'
+    response = Faraday.post 'http://localhost:9292/start_game'
+
+    assert_equal expected, response.body
+  end
+
+  def test_that_user_can_post_a_guess
+    expected = 
   end
 end

@@ -57,7 +57,6 @@ class Server
       request_lines << line.chomp
     end
     parse_headers(request_lines)
-    parse_post_body(request_lines) if @verb == 'POST'
   end
 
   def parse_headers(request_lines)
@@ -68,6 +67,10 @@ class Server
     @path = split_request[0][1]
     @protocol = split_request[0][2]
     request_lines.shift
+    parse_remaining_headers(request_lines)
+  end
+
+  def parse_remaining_headers(request_lines)
     split_request = request_lines.map do |string|
       string.split(': ')
     end
@@ -76,9 +79,10 @@ class Server
     @host = hash_request['Host'].chop.chop.chop.chop.chop
     @origin = hash_request['Origin']
     @accept = hash_request['Accept']
+    parse_post_body(hash_request) if @verb == 'POST'
   end
 
-  def parse_post_body
+  def parse_post_body(hash_request)
     @content_length = hash_request['Content-Length'].to_i
     store_guess
   end
