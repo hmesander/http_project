@@ -1,16 +1,27 @@
 module Game
   def begin_game
-    @answer = rand(0..100)
-    output = 'Good luck!'
-    @output_length = output.length
-    @client.puts headers
-    @client.puts output
+    if @answer.nil?
+      @answer = rand(0..100)
+      output = 'Good luck!'
+      @output_length = output.length
+      @client.puts headers
+      @client.puts output
+    else
+      @client.puts response_code_403
+      exit
+    end
   end
 
   def store_guess
     body = @client.readpartial(@content_length)
-    guess = body.split('=')[1].to_i
+    guess = body.split("\n")[3].to_i
     @guesses << guess
+    if @answer.nil?
+      begin_game
+      @client.puts redirect_header_301
+    else
+      @client.puts redirect_header_302
+    end
   end
 
   def guess_stats
@@ -31,5 +42,21 @@ module Game
     @output_length = (output1 + output2).length
     @client.puts headers
     @client.puts output1 + output2
+  end
+
+  def redirect_header_302
+    "HTTP/1.0 302 Found\r\nLocation: http://localhost:9292/game\r\n\r\n\r\n"
+  end
+
+  def redirect_header_301
+    "HTTP/1.1 301 Moved Permanently\r\nLocation: http://localhost:9292/game\r\n\r\n\r\n"
+  end
+
+  def response_code_403
+    "HTTP/1.1 403 Forbidden\r\n\r\n\r\n"
+  end
+
+  def response_code_404
+    "HTTP/1.1 404 Not Found\r\n\r\n\r\n"
   end
 end

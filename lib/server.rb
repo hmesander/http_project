@@ -12,6 +12,7 @@ class Server
     @total_requests = 0
     @closed         = false
     @guesses        = []
+    @answer         = nil
   end
 
   def initial_request_handler
@@ -41,6 +42,8 @@ class Server
       word_search
     elsif @path == '/game'
       game_stats
+    else
+      @client.puts response_code_404
     end
   end
 
@@ -49,6 +52,8 @@ class Server
       begin_game
     elsif @path == '/game'
       store_guess
+    else
+      @client.puts response_code_404
     end
   end
 
@@ -151,11 +156,5 @@ class Server
     @output_length = output.length
     @client.puts headers
     @client.puts output
-  end
-
-  def redirect_headers
-    '$ curl -I localhost:9292
-    HTTP/1.0 302 Found
-    Location: http://localhost:9292/game'
   end
 end
