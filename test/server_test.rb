@@ -6,50 +6,35 @@ require 'minitest/pride'
 require './lib/server'
 
 class ServerTest < Minitest::Test
-
-  def setup
-    @conn = Faraday.new(:url => 'localhost:9292')
-  end
-
-  def test_that_server_exists
-    skip
-    server = Server.new
-
-    assert_instance_of Server, server
-  end
-
-  def test_that_server_responds_with_hello_world
-    response = @conn.get '/hello'
-    assert_equal "Hello, World! (0)\n\n</pre>", response.body
-
-    response = @conn.get '/hello'
-    assert_equal "Hello, World! (1)\n\n</pre>", response.body
-
-    response = @conn.get '/hello'
-    assert_equal "Hello, World! (2)\n\n</pre>", response.body
-  end
-
   def test_that_server_can_respond_with_request_details
-    skip
-    formatted_request = "Verb: GET\nPath: /\nProtocol: HTTP/1.1\nHost: localhost\n
-                         Port: 9292\nOrigin: 0501bb48-d1e5-2538-765f-5fd213c384af\n
-                         Accept: */*"
-    expected = "<pre>Hello, World! (0)\n\n#{formatted_request}\n\n</pre>"
-    response = Faraday.get 'http://localhost:9292'
+    expected = "<pre>Verb: GET\nPath: /\nProtocol: HTTP/1.1\nHost: localhost\nPort: 9292\nOrigin: \nAccept: */*</pre>"
+    response = Faraday.get 'http://localhost:9292/'
 
     assert_equal expected, response.body
   end
 
-  def test_that_server_can_respond_to_given_path
-    skip
-    response = Faraday.get 'http://localhost:9292'
-    formatted_request = 'Verb: GET\nPath: /\nProtocol: HTTP/1.1\nHost: localhost\n
-                         Port: 9292\nOrigin: 0501bb48-d1e5-2538-765f-5fd213c384af\n
-                         Accept: */*'
-    assert_equal formatted_request, response.body
+  def test_that_server_responds_with_hello_world
+    response = Faraday.get 'http://localhost:9292/hello'
+    assert_equal '<pre>Hello, World! (0)</pre>', response.body
+
+    response = Faraday.get 'http://localhost:9292/hello'
+    assert_equal '<pre>Hello, World! (1)</pre>', response.body
+
+    response = Faraday.get 'http://localhost:9292/hello'
+    assert_equal '<pre>Hello, World! (2)</pre>', response.body
   end
 
-  def test_for_post_request
+  def test_that_server_can_respond_with_date_time
+    date = Date.today.strftime('%A, %B %e, %Y')
+    time = Time.now.strftime('%l:%M%p')
+
+    expected = "<pre>#{time} on #{date}</pre>"
+    response = Faraday.get 'http://localhost:9292/datetime'
+
+    assert_equal expected, response.body
+  end
+
+  def test_that_server_can_respond_with_
     skip
     post = Faraday.post 'http://localhost:9292/game'
 

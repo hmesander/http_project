@@ -67,18 +67,18 @@ class Server
     @verb = split_request[0][0]
     @path = split_request[0][1]
     @protocol = split_request[0][2]
-    @host = split_request[1][1].chop.chop.chop.chop.chop
-    @port = split_request[1][1][-4..-1]
-    @origin = split_request[5][1]
-    @accept = split_request[6][1]
-  end
-
-  def parse_post_body(request_lines)
     request_lines.shift
     split_request = request_lines.map do |string|
       string.split(': ')
     end
     hash_request = split_request.to_h
+    @port = hash_request['Host'][-4..-1]
+    @host = hash_request['Host'].chop.chop.chop.chop.chop
+    @origin = hash_request['Origin']
+    @accept = hash_request['Accept']
+  end
+
+  def parse_post_body
     @content_length = hash_request['Content-Length'].to_i
     store_guess
   end
@@ -88,7 +88,7 @@ class Server
   end
 
   def output_diagnostic
-    output = "<pre>#{formatted_request}\n\n</pre>"
+    output = "<pre>#{formatted_request}</pre>"
     @output_length = output.length
     @client.puts headers
     @client.puts output
