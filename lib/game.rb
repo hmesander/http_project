@@ -7,8 +7,7 @@ module Game
       @client.puts headers
       @client.puts output
     else
-      @client.puts response_code_403
-      exit
+      response_code_403
     end
   end
 
@@ -53,10 +52,32 @@ module Game
   end
 
   def response_code_403
-    "HTTP/1.1 403 Forbidden\r\n\r\n\r\n"
+    output = '403 Forbidden'
+    @client.puts ['http/1.0 403 Forbidden',
+                  "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
+                  'server: ruby',
+                  'content-type: text/html; charset=iso-8859-1',
+                  "content-length: #{output.length}\r\n\r\n"].join("\r\n")
+    @client.puts output
   end
 
   def response_code_404
-    "HTTP/1.1 404 Not Found\r\n\r\n\r\n"
+    output = '404 Not Found'
+    @client.puts ['http/1.0 404 Not Found',
+                  "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
+                  'server: ruby',
+                  'content-type: text/html; charset=iso-8859-1',
+                  "content-length: #{output.length}\r\n\r\n"].join("\r\n")
+    @client.puts output
+  end
+
+  def response_code_500
+    output = '500 Internal Server Error'
+    @client.puts ['http/1.0 500 Internal Server Error',
+                  "date: #{Time.now.strftime('%a, %e %b %Y %H:%M:%S %z')}",
+                  'server: ruby',
+                  'content-type: text/html; charset=iso-8859-1',
+                  "content-length: #{output.length}\r\n\r\n"].join("\r\n")
+    @client.puts output
   end
 end

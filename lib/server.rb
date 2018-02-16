@@ -42,8 +42,10 @@ class Server
       word_search
     elsif @path == '/game'
       game_stats
+    elsif @path == '/force_error'
+      response_code_500
     else
-      @client.puts response_code_404
+      response_code_404
     end
   end
 
@@ -52,8 +54,10 @@ class Server
       begin_game
     elsif @path == '/game'
       store_guess
+    elsif @path == '/force_error'
+      response_code_500
     else
-      @client.puts response_code_404
+      response_code_404
     end
   end
 
