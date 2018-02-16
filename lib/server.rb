@@ -2,6 +2,7 @@ require 'socket'
 require 'Date'
 require 'time'
 require './lib/game'
+require 'pry'
 
 class Server
   include Game
@@ -47,7 +48,7 @@ class Server
     if @path == '/start_game'
       begin_game
     elsif @path == '/game'
-      parse_post_body
+      store_guess
     end
   end
 
@@ -84,7 +85,6 @@ class Server
 
   def parse_post_body(hash_request)
     @content_length = hash_request['Content-Length'].to_i
-    store_guess
   end
 
   def formatted_request

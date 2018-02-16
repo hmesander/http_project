@@ -8,7 +8,7 @@ module Game
   end
 
   def store_guess
-    body = @client.read(@content_length).to_s
+    body = @client.readpartial(@content_length)
     guess = body.split('=')[1].to_i
     @guesses << guess
   end

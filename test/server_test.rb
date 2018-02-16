@@ -56,12 +56,10 @@ class ServerTest < Minitest::Test
   def test_that_server_can_search_for_words_in_dictionary
     expected = 'RUNNER is a known word.'
     response = Faraday.get 'http://localhost:9292/word_search?word=runner'
-
     assert_equal expected, response.body
 
     expected = 'SUPERCALI is not a known word.'
     response = Faraday.get 'http://localhost:9292/word_search?word=supercali'
-
     assert_equal expected, response.body
   end
 
@@ -72,7 +70,15 @@ class ServerTest < Minitest::Test
     assert_equal expected, response.body
   end
 
-  def test_that_user_can_post_a_guess
-    expected = 
+  def test_that_user_can_post_a_guess_and_retrieve_guess_stats
+    expected = "You have taken 0 guesses.\nGuesses taken so far:\n"
+    response = Faraday.get 'http://localhost:9292/game'
+    assert_equal expected, response.body
+
+    Faraday.post 'http://localhost:9292/game', { :guess => '45' }
+
+    expected = "You have taken 1 guesses.\nGuesses taken so far:\n0 - too low!"
+    response = Faraday.get 'http://localhost:9292/game'
+    assert_equal expected, response.body
   end
 end
